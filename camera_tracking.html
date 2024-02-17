@@ -43,8 +43,8 @@
     <script>
         // Function to check if a point is inside a rectangle
         function pointInsideRect(x, y, rect) {
-            return rect[0] < x && x < rect[0] + rect[2] &&
-                   rect[1] < y && y < rect[1] + rect[3];
+            return rect.x < x && x < rect.x + rect.width &&
+                   rect.y < y && y < rect.y + rect.height;
         }
 
         document.addEventListener('DOMContentLoaded', function () {
@@ -54,6 +54,9 @@
 
             // Set the target rectangle
             const targetRect = { x: 100, y: 100, width: 100, height: 100 };
+
+            // Set the red color threshold
+            const redThreshold = 50; // Adjust this threshold based on your specific conditions
 
             // Initialize camera
             navigator.mediaDevices.getUserMedia({ video: true })
@@ -69,7 +72,7 @@
                             const imageData = overlayCtx.getImageData(0, 0, video.width, video.height);
                             const data = imageData.data;
 
-                            // Check if any pixel in the target area is red
+                            // Check if any pixel in the target area is close to red
                             let ballInsideTarget = false;
                             for (let y = targetRect.y; y < targetRect.y + targetRect.height; y++) {
                                 for (let x = targetRect.x; x < targetRect.x + targetRect.width; x++) {
@@ -78,7 +81,7 @@
                                     const green = data[index + 1];
                                     const blue = data[index + 2];
 
-                                    if (red > 150 && green < 100 && blue < 100) {
+                                    if (Math.abs(red - 247) < redThreshold && green < 100 && blue < 100) {
                                         ballInsideTarget = true;
                                         break;
                                     }
