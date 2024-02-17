@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: black;
+        }
+
+        #video-container {
+            position: relative;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 1s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <div id="video-container">
+        <video id="video" width="640" height="480" autoplay></video>
+        <canvas id="overlay"></canvas>
+    </div>
+
+    <script>
+        // Function to check if a point is inside a rectangle
+        function pointInsideRect(x, y, rect) {
+            return rect[0] < x && x < rect[0] + rect[2] &&
+                   rect[1] < y && y < rect[1] + rect[3];
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const video = document.getElementById('video');
+            const overlay = document.getElementById('overlay');
+            const overlayCtx = overlay.getContext('2d');
+
+            // Set the target rectangle
+            const targetRect = { x: 100, y: 100, width: 100, height: 100 };
+
+            // Initialize camera
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then((stream) => {
+                    video.srcObject = stream;
+
+                    video.addEventListener('loadeddata', () => {
+                        setInterval(() => {
+                            // Draw video frame on the overlay canvas
+                            overlayCtx.drawImage(video, 0, 0, video.width, video.height);
+
+                            // Get the image data from the overlay canvas
+                            const imageData = overlayCtx.getImageData(0, 0, video.width, video.height);
+                            const data = imageData.data;
+
+                            // Check if any pixel in the target area is red
+                            let ballInsideTarget = false;
+                            for (let y = targetRect.y; y < targetRect.y + targetRect.height; y++) {
+                                for (let x = targetRect.x; x < targetRect.x + targetRect.width; x++) {
+                                    const index = (y * video.width + x) * 4;
+                                    const red = data[index];
+                                    const green = data[index + 1];
+                                    const blue = data[index + 2];
+
+                                    if (red > 150 && green < 100 && blue < 100) {
+                                        ballInsideTarget = true;
+                                        break;
+                                    }
+                                }
+
+                                if (ballInsideTarget) {
+                                    break;
+                                }
+                            }
+
+                            // Update overlay color based on ball position
+                            overlay.style.backgroundColor = ballInsideTarget ? 'green' : 'red';
+                            overlay.style.opacity = 1;
+
+                            // Reset overlay color after 1 second
+                            setTimeout(() => {
+                                overlay.style.opacity = 0;
+                            }, 1000);
+                        }, 100);
+                    });
+                })
+                .catch((error) => {
+                    console.error('Error accessing the camera: ', error);
+                });
+        });
+    </script>
+</body>
+</html>
